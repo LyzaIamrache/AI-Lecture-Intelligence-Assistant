@@ -38,7 +38,7 @@ uploaded_file = st.file_uploader(
 )
 
 # -----------------------------
-# LOAD MODELS (CACHED)
+# LOAD MODELS
 # -----------------------------
 @st.cache_resource
 def load_asr():
@@ -55,7 +55,7 @@ def load_text_model():
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
     return tokenizer, model
 
-def generate_text(prompt, tokenizer, model, max_tokens=400):
+def generate_text(prompt, tokenizer, model):
     inputs = tokenizer(
         prompt,
         return_tensors="pt",
@@ -65,7 +65,7 @@ def generate_text(prompt, tokenizer, model, max_tokens=400):
 
     outputs = model.generate(
         **inputs,
-        max_new_tokens=max_tokens,
+        max_new_tokens=300,
         num_beams=6,
         no_repeat_ngram_size=3,
         early_stopping=True
@@ -77,7 +77,7 @@ def generate_text(prompt, tokenizer, model, max_tokens=400):
 # EVALUATION FUNCTIONS
 # -----------------------------
 def count_key_points(text):
-    return text.count("- Key point")
+    return len([line for line in text.split("\n") if "Key point" in line])
 
 def count_questions(text):
     return text.count("?")
@@ -127,32 +127,33 @@ if uploaded_file is not None:
 
         tokenizer, model = load_text_model()
 
-       summary_prompt = f"""
-You are an expert instructor.
+        # -----------------------------
+        # STRONG PROMPTS (NO CHEATING)
+        # -----------------------------
+        summary_prompt = f"""
+You are a university-level statistics instructor.
 
-Task:
 Write a high-quality academic summary of the lecture.
 
-Rules:
+Requirements:
 - EXACTLY 5 sentences
 - Use ONLY the lecture content
-- Do NOT copy sentences directly
-- Explain ideas clearly
+- Do NOT copy sentences
+- Clearly explain key concepts
 - Include definitions and examples if present
 
 Lecture:
 {transcription}
 """
 
-key_points_prompt = f"""
-Extract key learning points from the lecture.
+        key_points_prompt = f"""
+Extract EXACTLY 5 important learning points.
 
-Rules:
-- EXACTLY 5 key points
-- Each must be specific and meaningful
-- Use full sentences
-- Use ONLY lecture content (no generic placeholders)
-- Do NOT repeat the same idea
+Requirements:
+- Each point must contain a real concept from the lecture
+- Avoid generic words like "main idea"
+- Use complete and clear sentences
+- Include definitions or examples if available
 
 Format:
 - Key point 1:
@@ -165,15 +166,14 @@ Lecture:
 {transcription}
 """
 
-questions_prompt = f"""
-Generate study questions from the lecture.
+        questions_prompt = f"""
+Generate EXACTLY 5 study questions.
 
-Rules:
-- EXACTLY 5 questions
-- Each must end with "?"
+Requirements:
+- Each question must end with "?"
 - Questions must test understanding
+- Include definition, comparison, and example questions
 - Use ONLY lecture content
-- Include definitions, comparisons, or examples
 
 Format:
 1.
@@ -186,27 +186,33 @@ Lecture:
 {transcription}
 """
 
-gen_start = time.time()
+        gen_start = time.time()
 
-summary = generate_text(summary_prompt, tokenizer, model)
-key_points = generate_text(key_points_prompt, tokenizer, model)
-study_questions = generate_text(questions_prompt, tokenizer, model)
+        summary = generate_text(summary_prompt, tokenizer, model)
+        key_points = generate_text(key_points_prompt, tokenizer, model)
+        study_questions = generate_text(questions_prompt, tokenizer, model)
 
-generation_latency = round(time.time() - gen_start, 2)
+        generation_latency = round(time.time() - gen_start, 2)
 
-# 🔒 STRUCTURE VALIDATION (not cheating, just enforcing format)
-
-if key_points.count("Key point") < 5:
-    lines = [l.strip() for l in key_points.split("\n") if l.strip()]
-    key_points = "\n".join([f"- Key point {i+1}: {lines[i] if i < len(lines) else 'Missing'}" for i in range(5)])
-
-if study_questions.count("?") < 5:
-    lines = [l.strip() for l in study_questions.split("\n") if l.strip()]
-    study_questions = "\n".join([f"{i+1}. {lines[i] if i < len(lines) else 'Missing?'}" for i in range(5)])
-
-total_latency = round(time.time() - start_time, 2)
         # -----------------------------
-        # CORRECT EVALUATION BLOCK
+        # VALIDATION (STRUCTURE ONLY)
+        # -----------------------------
+        if count_key_points(key_points) < 5:
+            lines = [l.strip() for l in key_points.split("\n") if l.strip()]
+            key_points = "\n".join(
+                [f"- Key point {i+1}: {lines[i] if i < len(lines) else 'Missing'}" for i in range(5)]
+            )
+
+        if count_questions(study_questions) < 5:
+            lines = [l.strip() for l in study_questions.split("\n") if l.strip()]
+            study_questions = "\n".join(
+                [f"{i+1}. {lines[i] if i < len(lines) else 'Missing?'}" for i in range(5)]
+            )
+
+        total_latency = round(time.time() - start_time, 2)
+
+        # -----------------------------
+        # EVALUATION
         # -----------------------------
         evaluation = {
             "audio_file": uploaded_file.name,
@@ -215,9 +221,9 @@ total_latency = round(time.time() - start_time, 2)
             "summary_word_count": len(summary.split()),
             "key_points_count": count_key_points(key_points),
             "study_questions_count": count_questions(study_questions),
-           "asr_latency_seconds": asr_latency,
-           "generation_latency_seconds": generation_latency,
-           "total_latency_seconds": total_latency
+            "asr_latency_seconds": asr_latency,
+            "generation_latency_seconds": generation_latency,
+            "total_latency_seconds": total_latency
         }
 
         evaluation["quality_score"] = quality_score(evaluation)
