@@ -264,6 +264,69 @@ with open("output_week15.txt", "w", encoding="utf-8") as f:
 with open("evaluation_week15.json", "w", encoding="utf-8") as f:
     json.dump(evaluation, f, indent=4)
 
-print("\nFiles saved:")
-print("- output_week15.txt")
-print("- evaluation_week15.json")
+# -----------------------------
+# REAL MODEL COMPARISON
+# -----------------------------
+
+print("\n==============================")
+print("STEP 8: MODEL COMPARISON")
+
+models_to_compare = [
+    "google/flan-t5-small",
+    "google/flan-t5-base",
+    "google/flan-t5-large"
+]
+
+comparison_results = []
+
+for model_name in models_to_compare:
+    print("\nTesting:", model_name)
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
+
+    def generate_with_model(prompt):
+        inputs = tokenizer(
+            prompt,
+            return_tensors="pt",
+            truncation=True,
+            max_length=1024
+        ).to(device)
+
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=200,
+            num_beams=4,
+            early_stopping=True
+        )
+
+        return tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    start = time.time()
+
+    s = generate_with_model(summary_prompt)
+    k = generate_with_model(key_points_prompt)
+    q = generate_with_model(questions_prompt)
+
+    latency = round(time.time() - start, 2)
+
+    result = {
+        "model": model_name,
+        "summary_length": len(s.split()),
+        "key_points": k.count("- Key point"),
+        "questions": q.count("?"),
+        "latency": latency
+    }
+
+    comparison_results.append(result)
+
+    print(json.dumps(result, indent=4))
+
+print("\nFINAL COMPARISON RESULTS:")
+print(json.dumps(comparison_results, indent=4))
+
+# Save comparison
+with open("model_comparison.json", "w") as f:
+    json.dump(comparison_results, f, indent=4)
+
+print("\nSaved: model_comparison.json")
