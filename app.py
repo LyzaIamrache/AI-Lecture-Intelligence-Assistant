@@ -121,7 +121,6 @@ if uploaded_file is not None:
         asr_latency = round(time.time() - asr_start, 2)
 
         transcription = result["text"].strip()
-
         st.text_area("Transcription", transcription, height=180)
 
         st.subheader("Step 2: AI Outputs")
@@ -194,22 +193,26 @@ if uploaded_file is not None:
 
         total_latency = round(time.time() - start_time, 2)
 
-        # Evaluation
-    evaluation = {
-    "audio_file": uploaded_file.name,
-    "device": device,
-    "transcription_word_count": len(transcription.split()),
-    "summary_word_count": len(summary.split()),
-    "key_points_count": count_key_points(key_points),
-    "study_questions_count": count_questions(study_questions),
-    "asr_latency_seconds": asr_latency,
-    "generation_latency_seconds": generation_latency,
-    "total_latency_seconds": total_latency
-}
+        # -----------------------------
+        # CORRECT EVALUATION BLOCK
+        # -----------------------------
+        evaluation = {
+            "audio_file": uploaded_file.name,
+            "device": device,
+            "transcription_word_count": len(transcription.split()),
+            "summary_word_count": len(summary.split()),
+            "key_points_count": count_key_points(key_points),
+            "study_questions_count": count_questions(study_questions),
+            "asr_latency_seconds": asr_latency,
+            "generation_latency_seconds": generation_latency,
+            "total_latency_seconds": total_latency
+        }
 
         evaluation["quality_score"] = quality_score(evaluation)
 
-        # Display results
+        # -----------------------------
+        # DISPLAY
+        # -----------------------------
         col1, col2 = st.columns(2)
 
         with col1:
@@ -224,7 +227,9 @@ if uploaded_file is not None:
             st.subheader("Evaluation")
             st.json(evaluation)
 
-        # Download
+        # -----------------------------
+        # DOWNLOAD
+        # -----------------------------
         st.download_button(
             "Download Results",
             json.dumps(evaluation, indent=4),
