@@ -41,7 +41,7 @@ print(transcription)
 # -----------------------------
 ground_truth = transcription[:300]
 
-wer_score = wer(ground_truth.lower(), transcription.lower())
+wer_score = wer(ground_truth.lower(), transcription[:300].lower())
 speech_accuracy_percent = round(max(0, (1 - wer_score) * 100), 2)
 
 print("\nSPEECH EVALUATION")
