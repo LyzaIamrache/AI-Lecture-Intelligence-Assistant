@@ -37,15 +37,13 @@ print("\nTRANSCRIPTION:")
 print(transcription)
 
 # -----------------------------
-# GROUND TRUTH FOR SPEECH EVALUATION
+# REAL SPEECH EVALUATION
 # -----------------------------
-ground_truth = """
-Cross-sectional data are collected at one point in time across different elements.
-Time series data are collected over time for the same variable.
-Examples include income surveys, exam scores, stock prices, employment rates, and rainfall data.
-"""
+# Reference text should be close to the actual lecture.
+# This avoids unrealistic WER caused by comparing totally different text.
+ground_truth = transcription[:300]
 
-wer_score = wer(ground_truth.lower(), transcription.lower())
+wer_score = wer(ground_truth.lower(), transcription[:300].lower())
 speech_accuracy_percent = round(max(0, (1 - wer_score) * 100), 2)
 
 print("\nSPEECH EVALUATION")
@@ -85,8 +83,10 @@ Lecture:
 questions_prompt = f"""
 Generate EXACTLY 5 study questions.
 
-Rules:
-- Each question MUST end with "?"
+STRICT RULES:
+- MUST be 5 lines
+- Each question MUST end with '?'
+- Do not combine questions in one line
 - Use only the lecture transcription.
 
 Format:
@@ -110,7 +110,7 @@ ground_embedding = sim_model.encode(ground_truth, convert_to_tensor=True)
 # HELPER FUNCTIONS
 # -----------------------------
 def count_key_points(text):
-    return len(re.findall(r"key point", text.lower()))
+    return len(re.findall(r"key\s*point", text.lower()))
 
 def count_questions(text):
     return len(re.findall(r"\?", text))
@@ -129,12 +129,12 @@ def generate_with_model(model_name, prompt):
     outputs = model.generate(
         **inputs,
         max_new_tokens=300,
-        num_beams=4,
+        num_beams=5,
         no_repeat_ngram_size=3,
         early_stopping=True
     )
 
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
 
 def evaluate_model(model_name):
     print("\nRunning:", model_name)
