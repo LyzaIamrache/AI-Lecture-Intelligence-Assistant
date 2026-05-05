@@ -1,5 +1,6 @@
 import time
 import json
+import re
 import torch
 from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
 from jiwer import wer
@@ -10,7 +11,6 @@ from sentence_transformers import SentenceTransformer, util
 # -----------------------------
 device = "cuda" if torch.cuda.is_available() else "cpu"
 pipeline_device = 0 if torch.cuda.is_available() else -1
-
 print("Using device:", device)
 
 # -----------------------------
@@ -37,12 +37,15 @@ print("\nTRANSCRIPTION:")
 print(transcription)
 
 # -----------------------------
-# REFERENCE TEXT FOR WER
+# GROUND TRUTH FOR SPEECH EVALUATION
 # -----------------------------
-# Uses part of the actual lecture transcription as reference to avoid mismatch.
-ground_truth = transcription[:500]
+ground_truth = """
+Cross-sectional data are collected at one point in time across different elements.
+Time series data are collected over time for the same variable.
+Examples include income surveys, exam scores, stock prices, employment rates, and rainfall data.
+"""
 
-wer_score = wer(ground_truth.lower(), transcription[:500].lower())
+wer_score = wer(ground_truth.lower(), transcription.lower())
 speech_accuracy_percent = round(max(0, (1 - wer_score) * 100), 2)
 
 print("\nSPEECH EVALUATION")
@@ -54,7 +57,10 @@ print("ASR Latency:", asr_latency, "seconds")
 # PROMPTS
 # -----------------------------
 summary_prompt = f"""
-Write a structured academic summary in EXACTLY 5 sentences using only the lecture transcription.
+You are a university instructor.
+
+Write EXACTLY 5 sentences summarizing the lecture.
+Use only the lecture transcription.
 
 Lecture:
 {transcription}
@@ -63,12 +69,12 @@ Lecture:
 key_points_prompt = f"""
 Extract EXACTLY 5 key points from the lecture.
 
-Format strictly:
-- Key point 1:
-- Key point 2:
-- Key point 3:
-- Key point 4:
-- Key point 5:
+STRICT FORMAT:
+- Key point 1: ...
+- Key point 2: ...
+- Key point 3: ...
+- Key point 4: ...
+- Key point 5: ...
 
 Use only the lecture transcription.
 
@@ -77,11 +83,18 @@ Lecture:
 """
 
 questions_prompt = f"""
-Write EXACTLY 5 study questions from the lecture.
+Generate EXACTLY 5 study questions.
 
 Rules:
-- Each question must end with "?"
+- Each question MUST end with "?"
 - Use only the lecture transcription.
+
+Format:
+1. ...
+2. ...
+3. ...
+4. ...
+5. ...
 
 Lecture:
 {transcription}
@@ -97,10 +110,10 @@ ground_embedding = sim_model.encode(ground_truth, convert_to_tensor=True)
 # HELPER FUNCTIONS
 # -----------------------------
 def count_key_points(text):
-    return text.count("Key point")
+    return len(re.findall(r"key point", text.lower()))
 
 def count_questions(text):
-    return text.count("?")
+    return len(re.findall(r"\?", text))
 
 def generate_with_model(model_name, prompt):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
