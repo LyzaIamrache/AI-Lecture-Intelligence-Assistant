@@ -303,9 +303,27 @@ Lecture transcription:
             st.subheader("Study Questions")
             st.write(study_questions)
 
-            st.subheader("Evaluation")
-            st.json(evaluation)
+           st.subheader("Evaluation Metrics")
 
+col1, col2 = st.columns(2)
+
+with col1:
+    st.metric("Transcription Words", evaluation["transcription_word_count"])
+    st.metric("Summary Words", evaluation["summary_word_count"])
+    st.metric("Key Points", evaluation["key_points_count"])
+
+with col2:
+    st.metric("Questions", evaluation["study_questions_count"])
+    st.metric("ASR Latency (s)", evaluation["asr_latency_seconds"])
+    st.metric("Total Latency (s)", evaluation["total_latency_seconds"])
+
+st.metric("Quality Score (/100)", evaluation["overall_quality_score_out_of_100"])
+
+st.info("This evaluation measures system performance, structure quality, and processing time.")
+
+# Keep JSON (for download / transparency)
+st.subheader("Detailed Evaluation (JSON)")
+st.json(evaluation)
         # -----------------------------
         # DOWNLOAD
         # -----------------------------
