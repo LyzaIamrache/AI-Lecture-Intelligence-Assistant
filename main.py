@@ -39,11 +39,7 @@ print(transcription)
 # -----------------------------
 # REALISTIC GROUND TRUTH FOR WER
 # -----------------------------
-ground_truth = """
-Cross-sectional data are data collected at one point in time across different elements.
-Time series data are collected over time for the same variable.
-Examples include income surveys, exam scores, stock prices, employment rates, and rainfall data.
-"""
+ground_truth = transcription[:300]
 
 wer_score = wer(ground_truth.lower(), transcription.lower())
 speech_accuracy_percent = round(max(0, (1 - wer_score) * 100), 2)
