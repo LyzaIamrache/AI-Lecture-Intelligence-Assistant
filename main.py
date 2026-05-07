@@ -3,6 +3,7 @@ import json
 import re
 import torch
 from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
+from deep_translator import GoogleTranslator
 from jiwer import wer
 from sentence_transformers import SentenceTransformer, util
 
@@ -14,9 +15,50 @@ pipeline_device = 0 if torch.cuda.is_available() else -1
 print("Using device:", device)
 
 # -----------------------------
-# AUDIO FILE
+# AUDIO FILE AND TRANSLATION LANGUAGE
 # -----------------------------
 audio_file = "audio.mp4"
+
+# Change this to any language code you want.
+# Examples:
+# Arabic = "ar", French = "fr", Spanish = "es", German = "de"
+target_language = "fr"
+
+# -----------------------------
+# TRANSLATION FUNCTION
+# -----------------------------
+def translate_long_text(text, target_language, chunk_size=4500):
+    """
+    Translate long text by splitting it into chunks.
+    GoogleTranslator has a character limit, so this helps avoid errors.
+    """
+    if not text or not text.strip():
+        return ""
+
+    chunks = []
+    current_chunk = ""
+
+    for paragraph in text.split("\n"):
+        if len(current_chunk) + len(paragraph) + 1 <= chunk_size:
+            current_chunk += paragraph + "\n"
+        else:
+            chunks.append(current_chunk)
+            current_chunk = paragraph + "\n"
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    translated_chunks = []
+
+    for chunk in chunks:
+        translated_chunk = GoogleTranslator(
+            source="auto",
+            target=target_language
+        ).translate(chunk)
+
+        translated_chunks.append(translated_chunk)
+
+    return "\n".join(translated_chunks)
 
 # -----------------------------
 # SPEECH-TO-TEXT
@@ -35,6 +77,23 @@ transcription = result["text"].strip()
 
 print("\nTRANSCRIPTION:")
 print(transcription)
+
+# -----------------------------
+# TRANSLATION
+# -----------------------------
+translation_start = time.time()
+
+translated_transcription = translate_long_text(
+    transcription,
+    target_language
+)
+
+translation_latency = round(time.time() - translation_start, 2)
+
+print("\nTRANSLATED TRANSCRIPTION:")
+print(translated_transcription)
+print("Translation Language:", target_language)
+print("Translation Latency:", translation_latency, "seconds")
 
 # -----------------------------
 # REALISTIC GROUND TRUTH FOR WER
@@ -159,10 +218,10 @@ def fix_questions_if_needed(text):
 
     return (
         "1. What is the main topic discussed in the lecture?\n"
-        "2. What is cross-sectional data according to the lecture?\n"
-        "3. What is time series data according to the lecture?\n"
-        "4. What examples of cross-sectional data are mentioned in the lecture?\n"
-        "5. What examples of time series data are mentioned in the lecture?"
+        "2. What is one important concept explained in the lecture?\n"
+        "3. What example is mentioned in the lecture?\n"
+        "4. Why is this topic important for students?\n"
+        "5. How can students use this lecture content when studying?"
     )
 
 def evaluate_model(model_name):
@@ -188,6 +247,9 @@ def evaluate_model(model_name):
         "wer": round(wer_score, 3),
         "speech_accuracy_percent": speech_accuracy_percent,
         "asr_latency_seconds": asr_latency,
+        "translation_language": target_language,
+        "translation_latency_seconds": translation_latency,
+        "translated_transcription_word_count": len(translated_transcription.split()),
         "summary_words": len(summary.split()),
         "key_points_count": count_key_points(key_points),
         "questions_count": count_questions(questions),
@@ -219,6 +281,9 @@ for model_name in models_to_compare:
 # -----------------------------
 # SAVE RESULTS
 # -----------------------------
+with open("translated_transcription.txt", "w", encoding="utf-8") as f:
+    f.write(translated_transcription)
+
 with open("model_comparison.json", "w", encoding="utf-8") as f:
     json.dump(comparison_results, f, indent=4)
 
@@ -230,6 +295,11 @@ with open("evaluation_week15.json", "w", encoding="utf-8") as f:
                 "speech_accuracy_percent": speech_accuracy_percent,
                 "asr_latency_seconds": asr_latency
             },
+            "translation": {
+                "target_language": target_language,
+                "translation_latency_seconds": translation_latency,
+                "translated_transcription_word_count": len(translated_transcription.split())
+            },
             "model_comparison": comparison_results
         },
         f,
@@ -237,5 +307,6 @@ with open("evaluation_week15.json", "w", encoding="utf-8") as f:
     )
 
 print("\nSaved:")
+print("- translated_transcription.txt")
 print("- model_comparison.json")
 print("- evaluation_week15.json")
