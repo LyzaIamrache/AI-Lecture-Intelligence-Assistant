@@ -1,5 +1,6 @@
 import streamlit as st
 from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
+from deep_translator import GoogleTranslator
 import torch
 import time
 import json
@@ -18,8 +19,8 @@ st.set_page_config(
 
 st.title("🎧 AI Lecture Intelligence Assistant")
 st.write(
-    "Upload lecture audio and generate transcription, summary, key points, "
-    "study questions, and evaluation metrics."
+    "Upload lecture audio and generate transcription, translation, summary, "
+    "key points, study questions, and evaluation metrics."
 )
 
 # -----------------------------
@@ -32,6 +33,7 @@ st.sidebar.header("System Info")
 st.sidebar.write("Device:", device)
 st.sidebar.write("Speech Model: Whisper Small")
 st.sidebar.write("Text Model: FLAN-T5 Large")
+st.sidebar.write("Translation: Google Translator")
 
 # -----------------------------
 # FILE UPLOAD
@@ -39,6 +41,31 @@ st.sidebar.write("Text Model: FLAN-T5 Large")
 uploaded_file = st.file_uploader(
     "Upload lecture audio",
     type=["wav", "mp3", "mp4", "m4a"]
+)
+
+# -----------------------------
+# TRANSLATION OPTIONS
+# -----------------------------
+language_options = {
+    "Arabic": "ar",
+    "French": "fr",
+    "Spanish": "es",
+    "English": "en",
+    "German": "de",
+    "Italian": "it",
+    "Chinese Simplified": "zh-CN",
+    "Turkish": "tr",
+    "Hindi": "hi",
+    "Korean": "ko",
+    "Japanese": "ja",
+    "Portuguese": "pt",
+    "Russian": "ru",
+    "Urdu": "ur"
+}
+
+selected_language = st.selectbox(
+    "Choose a language for translation",
+    list(language_options.keys())
 )
 
 # -----------------------------
@@ -113,7 +140,6 @@ def clean_numbering(text):
 
 def create_safe_summary(transcription):
     sentences = split_sentences(transcription)
-
     selected = sentences[:5]
 
     while len(selected) < 5:
@@ -123,7 +149,6 @@ def create_safe_summary(transcription):
 
 def create_safe_key_points(transcription):
     sentences = split_sentences(transcription)
-
     selected = sentences[:5]
 
     while len(selected) < 5:
@@ -134,19 +159,46 @@ def create_safe_key_points(transcription):
     )
 
 def create_safe_questions(transcription):
-    sentences = split_sentences(transcription)
-
-    topic_sentence = sentences[0] if len(sentences) > 0 else "the lecture topic"
-    concept_sentence = sentences[1] if len(sentences) > 1 else "the main concept"
-    example_sentence = sentences[2] if len(sentences) > 2 else "an example from the lecture"
-
     return (
-        f"1. What is the main topic discussed in the lecture?\n"
-        f"2. What concept is explained in this part of the lecture?\n"
-        f"3. What example is provided in the lecture?\n"
-        f"4. Why is the topic important for understanding the lecture content?\n"
-        f"5. How can students use this lecture content when studying?"
+        "1. What is the main topic discussed in the lecture?\n"
+        "2. What concept is explained in this part of the lecture?\n"
+        "3. What example is provided in the lecture?\n"
+        "4. Why is the topic important for understanding the lecture content?\n"
+        "5. How can students use this lecture content when studying?"
     )
+
+def translate_long_text(text, target_language, chunk_size=4500):
+    """
+    Translate long text by splitting it into chunks.
+    GoogleTranslator has a character limit, so this helps avoid errors.
+    """
+    if not text or not text.strip():
+        return ""
+
+    chunks = []
+    current_chunk = ""
+
+    for paragraph in text.split("\n"):
+        if len(current_chunk) + len(paragraph) + 1 <= chunk_size:
+            current_chunk += paragraph + "\n"
+        else:
+            chunks.append(current_chunk)
+            current_chunk = paragraph + "\n"
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    translated_chunks = []
+
+    for chunk in chunks:
+        translated_chunk = GoogleTranslator(
+            source="auto",
+            target=target_language
+        ).translate(chunk)
+
+        translated_chunks.append(translated_chunk)
+
+    return "\n".join(translated_chunks)
 
 # -----------------------------
 # MAIN APP
@@ -179,9 +231,29 @@ if uploaded_file is not None:
         st.text_area("Transcription", transcription, height=200)
 
         # -----------------------------
+        # TRANSLATION
+        # -----------------------------
+        st.subheader("Step 2: Translation")
+
+        translation_start = time.time()
+
+        translated_transcription = translate_long_text(
+            transcription,
+            language_options[selected_language]
+        )
+
+        translation_latency = round(time.time() - translation_start, 2)
+
+        st.text_area(
+            f"Translated Transcription ({selected_language})",
+            translated_transcription,
+            height=200
+        )
+
+        # -----------------------------
         # TEXT GENERATION
         # -----------------------------
-        st.subheader("Step 2: AI Outputs")
+        st.subheader("Step 3: AI Outputs")
 
         tokenizer, model = load_text_model()
 
@@ -253,8 +325,7 @@ Lecture transcription:
         generation_latency = round(time.time() - gen_start, 2)
 
         # -----------------------------
-        # VALIDATION WITHOUT "MISSING"
-        # Uses the actual transcription only
+        # VALIDATION
         # -----------------------------
         if len(summary.split()) < 30:
             summary = create_safe_summary(transcription)
@@ -273,11 +344,14 @@ Lecture transcription:
         evaluation = {
             "audio_file": uploaded_file.name,
             "device": device,
+            "translation_language": selected_language,
             "transcription_word_count": len(transcription.split()),
+            "translated_transcription_word_count": len(translated_transcription.split()),
             "summary_word_count": len(summary.split()),
             "key_points_count": count_key_points(key_points),
             "study_questions_count": count_questions(study_questions),
             "asr_latency_seconds": asr_latency,
+            "translation_latency_seconds": translation_latency,
             "generation_latency_seconds": generation_latency,
             "total_latency_seconds": total_latency,
             "summary_compression_ratio": round(
@@ -318,6 +392,9 @@ Audio File:
 Transcription:
 {transcription}
 
+Translated Transcription ({selected_language}):
+{translated_transcription}
+
 Summary:
 {summary}
 
@@ -344,3 +421,6 @@ Evaluation:
             file_name="evaluation_week15.json",
             mime="application/json"
         )
+
+else:
+    st.info("Please upload a lecture audio file to begin.")
