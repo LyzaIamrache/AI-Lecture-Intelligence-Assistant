@@ -1,120 +1,151 @@
-AI Lecture Intelligence Assistant
+# AI Lecture Intelligence Assistant
 
-An AI-powered educational system that transforms lecture audio into structured learning content using speech recognition and natural language processing. The system automatically generates transcription, summaries, key points, study questions, multilingual translations, and evaluation metrics to improve learning efficiency and accessibility.
+An AI-powered educational system that transforms lecture audio into structured learning content using speech recognition and natural language processing.
 
-Project Overview
+The system automatically generates:
+- Transcription
+- Translated Transcription
+- Summary
+- Key Points
+- Study Questions
+- Evaluation Metrics
 
-The AI Lecture Intelligence Assistant is an end-to-end AI pipeline designed to help students better understand, review, and interact with lecture material.
+This project improves learning efficiency, accessibility, and multilingual support for students.
+
+---
+
+# Project Overview
+
+The AI Lecture Intelligence Assistant is an end-to-end AI pipeline designed to help students better understand and review lecture material.
 
 The system takes lecture audio as input and automatically generates:
+- Lecture Transcription (Speech → Text)
+- Translated Transcription
+- Structured Summary
+- Key Points Extraction
+- Study Questions
+- Evaluation Metrics
 
-Lecture Transcription (Speech → Text)
-Structured Summary
-Key Points Extraction
-Study Questions
-Multilingual Translation
-Evaluation Metrics and Performance Analysis
+The project combines speech recognition and text generation models into an intelligent educational assistant.
 
-This project combines automatic speech recognition and text generation models into an educational assistant that supports both studying and language learning.
+---
 
-System Architecture
+# System Architecture
 
-Audio Input
-↓
-Whisper (Speech Recognition)
-↓
-Transcription
-↓
-FLAN-T5 (Text Generation)
-↓
-Summary / Key Points / Study Questions
-↓
-Translation Module
-↓
+Audio Input  
+↓  
+Whisper (Speech Recognition)  
+↓  
+Transcription  
+↓  
+Translation Module  
+↓  
+FLAN-T5 (Text Generation)  
+↓  
+Summary / Key Points / Questions  
+↓  
 Evaluation Dashboard
 
-Technologies Used
-Python
-Streamlit (User Interface)
-Hugging Face Transformers
-Whisper (Speech Recognition)
-FLAN-T5 (Text Generation)
-Torch
-Sentence Transformers
-Deep Translator
-Pandas
-Features
-Upload lecture audio files (MP3, WAV, MP4, M4A)
-Automatic speech transcription using Whisper
-AI-generated summaries
-Automatic extraction of key lecture concepts
-Study question generation
-Translation of summaries and captions into multiple languages
-Clean and interactive Streamlit interface
-Built-in evaluation and monitoring dashboard
-Model comparison functionality
-Educational and accessibility support
-Supported Outputs
-1. Transcription
+---
 
+# Technologies Used
+
+- Python
+- Streamlit
+- Hugging Face Transformers
+- Whisper
+- FLAN-T5
+- Torch
+- Sentence Transformers
+- Deep Translator
+- Pandas
+
+---
+
+# Features
+
+- Upload lecture audio files (MP3, WAV, MP4, M4A)
+- Automatic transcription using Whisper
+- Translation of transcription into multiple languages
+- AI-generated summaries
+- Automatic key point extraction
+- Study question generation
+- Interactive Streamlit interface
+- Evaluation dashboard
+- Model comparison functionality
+
+---
+
+# Supported Outputs
+
+## 1. Transcription
 Converts lecture audio into readable text using Whisper.
 
-2. Summary
+## 2. Translated Transcription
+Translates the transcription into different languages for multilingual accessibility.
 
-Generates a structured summary of the lecture content.
+## 3. Summary
+Generates a structured summary of the lecture.
 
-3. Key Points
-
+## 4. Key Points
 Extracts the most important concepts discussed in the lecture.
 
-4. Study Questions
+## 5. Study Questions
+Automatically generates review questions for students.
 
-Automatically creates review questions for students.
+## 6. Evaluation Metrics
+Measures:
+- Speech recognition quality
+- Generation latency
+- Semantic similarity
+- Output structure quality
 
-5. Translation
+---
 
-Translates generated summaries and captions into different languages to support multilingual learning.
+# Model Comparison
 
-6. Evaluation Metrics
+| Model | Performance |
+|---|---|
+| FLAN-T5 Small | Faster generation but lower quality |
+| FLAN-T5 Base | Balanced speed and quality |
+| FLAN-T5 Large | Best quality and coherence (selected model) |
 
-Measures performance including:
+---
 
-Speech recognition quality
-Generation latency
-Semantic similarity
-Output structure quality
-Model Comparison
-
-The project compares different FLAN-T5 models:
-
-Model	Performance
-FLAN-T5 Small	Faster generation but lower quality
-FLAN-T5 Base	Balanced speed and quality
-FLAN-T5 Large	Best quality and coherence (selected model)
-Evaluation Results
+# Evaluation Results
 
 Example system performance:
-
-Summary Quality: ~81.68%
-Key Points Generated: 5
-Study Questions Generated: 5
-Structured Output Successfully Generated
+- Summary Quality: ~81.68%
+- Key Points Generated: 5
+- Study Questions Generated: 5
 
 The evaluation dashboard measures:
+- ASR latency
+- Text generation latency
+- Semantic similarity scores
+- Output completeness
 
-ASR latency
-Text generation latency
-Semantic similarity scores
-Output completeness
-How to Run the Project
-1. Clone the Repository
-git clone <repository-link>
-cd AI-Lecture-Intelligence-Assistant
-2. Install Dependencies
+---
+
+# How to Run the Project
+
+## 1. Install Dependencies
+
+```bash
 python -m pip install -r requirements.txt
-3. Run the Application
+```
+
+## 2. Run the Application
+
+```bash
 python -m streamlit run app.py
-Project Structure
+```
+
+---
+
+# Project Structure
+
+```text
 ├── app.py
 ├── main.py
 ├── requirements.txt
@@ -122,40 +153,49 @@ Project Structure
 ├── outputs/
 ├── Video/
 └── README.md
-Business Value
-Target Users
-Students
-Universities
-Online learning platforms
-Language learners
-Educational institutions
-Benefits
-Faster studying and revision
-Better lecture understanding
-Automated note-taking
-Multilingual accessibility
-Educational content translation
-Improved accessibility for learners
-AI-assisted learning experience
-Future Work
-Real-time lecture processing
-Live classroom integration
-Mobile application support
-Voice output (Text-to-Speech)
-Improved multilingual translation
-Better evaluation using real ground truth datasets
-Cloud deployment
-Advanced summarization models
-Interactive chatbot for lecture Q&A
-Limitations
-Processing time may increase for large AI models
-Output quality depends on audio clarity
-Evaluation is limited without complete ground truth datasets
-Large models require higher computational resources
-Conclusion
+```
 
-The AI Lecture Intelligence Assistant demonstrates how artificial intelligence can transform lecture audio into structured educational content through transcription, summarization, question generation, translation, and evaluation.
+---
 
-By combining speech recognition, natural language processing, and multilingual support, the system improves educational accessibility, learning efficiency, and student engagement.
+# Business Value
 
+## Target Users
+- Students
+- Universities
+- Online learning platforms
+- Language learners
 
+## Benefits
+- Faster studying and revision
+- Better lecture understanding
+- Automated note-taking
+- Multilingual accessibility
+- AI-assisted learning support
+
+---
+
+# Future Work
+
+- Real-time lecture processing
+- Mobile application support
+- Voice output (Text-to-Speech)
+- Improved multilingual translation
+- Better evaluation using real ground truth datasets
+- Cloud deployment
+
+---
+
+# Limitations
+
+- Processing time may increase for large AI models
+- Output quality depends on audio clarity
+- Evaluation is limited without complete ground truth datasets
+- Large models require higher computational resources
+
+---
+
+# Conclusion
+
+The AI Lecture Intelligence Assistant demonstrates how artificial intelligence can transform lecture audio into structured educational content through transcription, translated transcription, summarization, question generation, and evaluation.
+
+By combining speech recognition, natural language processing, and multilingual support, the system improves educational accessibility and learning efficiency.
