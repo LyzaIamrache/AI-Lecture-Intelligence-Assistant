@@ -82,7 +82,7 @@ Evaluation Dashboard
 Converts lecture audio into readable text using Whisper.
 
 ## 2. Translated Transcription
-Translates the transcription into different languages for multilingual accessibility.
+Translates only the generated transcription into different languages for multilingual accessibility.
 
 ## 3. Summary
 Generates a structured summary of the lecture.
@@ -198,4 +198,4 @@ python -m streamlit run app.py
 
 The AI Lecture Intelligence Assistant demonstrates how artificial intelligence can transform lecture audio into structured educational content through transcription, translated transcription, summarization, question generation, and evaluation.
 
-By combining speech recognition, natural language processing, and multilingual support, the system improves educational accessibility and learning efficiency.
+By combining speech recognition and natural language processing, the system improves educational accessibility and learning efficiency.
